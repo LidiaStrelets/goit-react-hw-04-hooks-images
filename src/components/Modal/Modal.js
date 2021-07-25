@@ -1,46 +1,44 @@
-import React, { Component } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 import styles from './Modal.module.css';
 import { createPortal } from 'react-dom';
 
-const modalRoot = document.querySelector('#modal-root');
+const Modal = ({ toggleModal, children }) => {
+  const modalRoot = useRef(document.querySelector('#modal-root'));
 
-class Modal extends Component {
-  state = {};
+  const handleEscape = useCallback(
+    event => {
+      if (event.code === 'Escape') {
+        toggleModal();
+      }
+    },
+    [toggleModal],
+  );
 
-  static propTypes = {
-    toggleModal: PropTypes.func.isRequired,
-    children: PropTypes.node.isRequired,
-  };
-  componentDidMount() {
-    window.addEventListener('keydown', this.handleEscape);
-  }
+  useEffect(() => {
+    window.addEventListener('keydown', handleEscape);
 
-  handleEscape = event => {
-    if (event.code === 'Escape') {
-      this.props.toggleModal();
-    }
-  };
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [handleEscape]);
 
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleEscape);
-  }
-
-  handleBackdrop = event => {
+  const handleBackdrop = event => {
     if (event.target === event.currentTarget) {
-      this.props.toggleModal();
+      toggleModal();
     }
   };
 
-  render() {
-    return createPortal(
-      <div className={styles.backdrop} onClick={this.handleBackdrop}>
-        <div className={styles.content}>{this.props.children}</div>
-      </div>,
-      modalRoot,
-    );
-  }
-}
-
+  return createPortal(
+    <div className={styles.backdrop} onClick={handleBackdrop}>
+      <div className={styles.content}>{children}</div>
+    </div>,
+    modalRoot.current,
+  );
+};
+Modal.propTypes = {
+  toggleModal: PropTypes.func.isRequired,
+  children: PropTypes.node.isRequired,
+};
 export default Modal;

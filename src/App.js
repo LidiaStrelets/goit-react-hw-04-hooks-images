@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
 import Searchbar from './components/Searchbar';
 import ImageGallery from './components/ImageGallery';
@@ -8,99 +8,97 @@ import imagesApi from './services/image-service';
 import 'react-loader-spinner/dist/loader/css/react-spinner-loader.css';
 import Loader from 'react-loader-spinner';
 
-class App extends Component {
-  state = { currentQuery: '', currentPage: 1, images: [], isLoading: false, showModal: false };
+const App = () => {
+  const [currentQuery, setCurrentQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [images, setImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [bigImage, setBigImage] = useState(null);
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.currentQuery !== this.state.currentQuery) {
-      this.populateImages();
-    }
-  }
+  useEffect(() => {
+    populateImages();
+  }, [currentQuery]);
 
-  onFormSubmit = query => {
-    this.setState({ currentQuery: query, currentPage: 1, images: [] });
+  const onFormSubmit = query => {
+    setCurrentQuery(query);
+    setCurrentPage(1);
+    setImages([]);
   };
 
-  populateImages = () => {
-    this.setState({ isLoading: true });
-    const { currentQuery, currentPage } = this.state;
+  function populateImages() {
+    setIsLoading(true);
     imagesApi
       .fetchImages({ currentQuery, currentPage })
-      .then(images => {
-        this.setState(prevState => ({
-          currentPage: prevState.currentPage + 1,
-          images: [
-            ...prevState.images,
-            ...images.map(({ id, webformatURL, largeImageURL }) => ({
-              id,
-              webformatURL,
-              largeImageURL,
-            })),
-          ],
-        }));
+      .then(imagesResponse => {
+        setCurrentPage(prevCurrentPage => prevCurrentPage + 1);
+        setImages(prevImages => [
+          ...prevImages,
+          ...imagesResponse.map(({ id, webformatURL, largeImageURL }) => ({
+            id,
+            webformatURL,
+            largeImageURL,
+          })),
+        ]);
       })
       .finally(() => {
-        this.setState({ isLoading: false });
+        setIsLoading(false);
       });
-  };
+  }
 
-  handleMoreClick = () => {
-    this.populateImages();
+  const handleMoreClick = () => {
+    populateImages();
 
     window.scrollTo({
       top: document.documentElement.scrollHeight,
       behavior: 'smooth',
     });
   };
-  handleImgClick = src => {
-    this.setState({ bigImg: src, showModal: true });
+  const handleImgClick = src => {
+    setBigImage(src);
+    setShowModal(true);
   };
-  toggleModal = event => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-    }));
+  const toggleModal = event => {
+    setShowModal(prevShowModal => !prevShowModal);
   };
 
-  render() {
-    const { isLoading, showModal, bigImg } = this.state;
-    return (
-      <div>
-        {showModal && (
-          <Modal toggleModal={this.toggleModal}>
-            <img src={bigImg} alt="" />
-          </Modal>
-        )}
-        <Searchbar onFormSubmit={this.onFormSubmit} />
-        {this.state.images.length > 0 && (
-          <>
-            <ImageGallery handleImgClick={this.handleImgClick} images={this.state.images} />
-            {isLoading ? (
-              <Loader
-                type="Circles"
-                color="#bd2745"
-                height={70}
-                width={70}
-                timeout={3000}
-                className="Spinner"
-              />
-            ) : (
-              <BtnMore onBtn={this.handleMoreClick} />
-            )}
-          </>
-        )}
-        {isLoading && this.state.images.length === 0 && (
-          <Loader
-            type="Circles"
-            color="#bd2745"
-            height={70}
-            width={70}
-            timeout={3000}
-            className="Spinner"
-          />
-        )}
-      </div>
-    );
-  }
-}
+  return (
+    <div>
+      {showModal && (
+        <Modal toggleModal={toggleModal}>
+          <img src={bigImage} alt="" />
+        </Modal>
+      )}
+      <Searchbar onFormSubmit={onFormSubmit} />
+      {images.length > 0 && (
+        <>
+          <ImageGallery handleImgClick={handleImgClick} images={images} />
+          {isLoading ? (
+            <Loader
+              type="Circles"
+              color="#bd2745"
+              height={70}
+              width={70}
+              timeout={3000}
+              className="Spinner"
+            />
+          ) : (
+            <BtnMore onBtn={handleMoreClick} />
+          )}
+        </>
+      )}
+      {isLoading && images.length === 0 && (
+        <Loader
+          type="Circles"
+          color="#bd2745"
+          height={70}
+          width={70}
+          timeout={3000}
+          className="Spinner"
+        />
+      )}
+    </div>
+  );
+};
 
 export default App;
