@@ -18,7 +18,7 @@ const App = () => {
 
   useEffect(() => {
     populateImages();
-  }, [currentQuery]);
+  }, [currentQuery, currentPage]);
 
   const onFormSubmit = query => {
     setCurrentQuery(query);
@@ -31,7 +31,7 @@ const App = () => {
     imagesApi
       .fetchImages({ currentQuery, currentPage })
       .then(imagesResponse => {
-        setCurrentPage(prevCurrentPage => prevCurrentPage + 1);
+        // setCurrentPage(prevCurrentPage => prevCurrentPage + 1);
         setImages(prevImages => [
           ...prevImages,
           ...imagesResponse.map(({ id, webformatURL, largeImageURL }) => ({
@@ -47,8 +47,8 @@ const App = () => {
   }
 
   const handleMoreClick = () => {
-    populateImages();
-
+    // populateImages();
+    setCurrentPage(prevCurrentPage => prevCurrentPage + 1);
     window.scrollTo({
       top: document.documentElement.scrollHeight,
       behavior: 'smooth',
